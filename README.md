@@ -128,11 +128,6 @@
   - Créez une nouvelle branche pour votre fonctionnalité ou correctif : `git checkout -b feature/<nom>`.
   - Soumettez une pull request pour révision.
 
-## Licence 📄
-
-- **Type de licence** : MIT (à confirmer).  
-  Cela signifie que vous pouvez utiliser, copier, modifier, fusionner, publier, distribuer, sous-licencier et/ou vendre des copies de ce logiciel.
-
 ## Crédits 🙏
 
 - **Développeur** : CodeStorm team
