@@ -1,0 +1,314 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="prediction-container">
+    <h1 class="section-title"><i class="fas fa-heartbeat"></i> Prédiction d'Éligibilité</h1>
+
+    <div class="card prediction-card">
+        <h3 class="card-title"><i class="fas fa-chart-line"></i> Statistiques de Dons</h3>
+        <p>Nombre prévu de dons futurs (basé sur +10%) : <span class="highlight">{{ predicted_dons }}</span></p>
+    </div>
+
+    <div class="card prediction-card">
+        <h3 class="card-title"><i class="fas fa-user-plus"></i> Prédire pour un Nouveau Donneur</h3>
+        <form method="post" class="prediction-form">
+            {% csrf_token %}
+            <input type="hidden" name="new_donor_submit" value="1">
+            <div class="form-group">
+                <label for="age"><i class="fas fa-calendar-alt"></i> Âge :</label>
+                <input type="number" id="age" name="age" required class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="genre"><i class="fas fa-venus-mars"></i> Genre :</label>
+                <select id="genre" name="genre" required class="form-control">
+                    <option value="Homme">Homme</option>
+                    <option value="Femme">Femme</option>
+                    <option value="Autre">Autre</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="profession"><i class="fas fa-briefcase"></i> Profession :</label>
+                <input type="text" id="profession" name="profession" required class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="quartier"><i class="fas fa-map-marker-alt"></i> Quartier :</label>
+                <select id="quartier" name="quartier" required class="form-control">
+                    {% for quartier in quartiers %}
+                        <option value="{{ quartier }}">{{ quartier }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-notes-medical"></i> Conditions de santé :</label>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" name="hypertension"> Hypertension</label>
+                    <label><input type="checkbox" name="diabete"> Diabète</label>
+                    <label><input type="checkbox" name="asthme"> Asthme</label>
+                    <label><input type="checkbox" name="hiv_hbs_hcv"> HIV/HBS/HCV</label>
+                    <label><input type="checkbox" name="tatoue"> Tatoué</label>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Prédire</button>
+        </form>
+
+        {% if prediction_result and not selected_donor %}
+            <div class="prediction-result">
+                <h4>Résultat :</h4>
+                <p class="result {{ prediction_result.ml|lower }}">Prédiction ML : {{ prediction_result.ml }}</p>
+                <p class="result {{ prediction_result.manual|lower }}">Vérification manuelle : {{ prediction_result.manual }}</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="card prediction-card">
+        <h3 class="card-title"><i class="fas fa-user-check"></i> Prédire pour un Donneur Existant</h3>
+        <form method="post" class="prediction-form">
+            {% csrf_token %}
+            <input type="hidden" name="existing_donor_submit" value="1">
+            <div class="form-group">
+                <label for="donor_id"><i class="fas fa-id-card"></i> Choisir un donneur :</label>
+                <select id="donor_id" name="donor_id" required class="form-control">
+                    {% for donneur in donneurs %}
+                        <option value="{{ donneur.id }}">ID: {{ donneur.id }} - {{ donneur.genre }} - {{ donneur.quartier }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Prédire</button>
+        </form>
+
+        {% if prediction_result and selected_donor %}
+            <div class="prediction-result">
+                <h4>Résultat pour le donneur ID {{ selected_donor.id }} :</h4>
+                <p><i class="fas fa-calendar-alt"></i> Âge : {{ selected_donor.age }}</p>
+                <p><i class="fas fa-venus-mars"></i> Genre : {{ selected_donor.genre }}</p>
+                <p><i class="fas fa-briefcase"></i> Profession : {{ selected_donor.profession|default:"Inconnu" }}</p>
+                <p><i class="fas fa-map-marker-alt"></i> Quartier : {{ selected_donor.quartier }}</p>
+                <p><i class="fas fa-notes-medical"></i> Conditions :
+                    {% if selected_donor.hypertension %}Hypertension{% endif %}
+                    {% if selected_donor.diabete %}, Diabète{% endif %}
+                    {% if selected_donor.asthme %}, Asthme{% endif %}
+                    {% if selected_donor.hiv_hbs_hcv %}, HIV/HBS/HCV{% endif %}
+                    {% if selected_donor.tatoue %}, Tatoué{% endif %}
+                    {% if not selected_donor.hypertension and not selected_donor.diabete and not selected_donor.asthme and not selected_donor.hiv_hbs_hcv and not selected_donor.tatoue %}-{% endif %}
+                </p>
+                <p class="result {{ prediction_result.ml|lower }}">Prédiction ML : {{ prediction_result.ml }}</p>
+                <p class="result {{ prediction_result.manual|lower }}">Vérification manuelle : {{ prediction_result.manual }}</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+<footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-left">
+        <h5>Campagne Don de Sang</h5>
+        <p>Sensibiliser. Sauver des vies. Un don à la fois.</p>
+      </div>
+      <div class="footer-right">
+        <ul class="footer-links">
+          <li><a href="{% url 'dashboard' %}">Accueil</a></li>
+          <li><a href="{% url 'donors' %}">Donneurs</a></li>
+          <li><a href="{% url 'profiling' %}">Profilage</a></li>
+          <li><a href="{% url 'sentiment' %}">Sentiment</a></li>
+          <li><a href="{% url 'logout' %}">Déconnexion</a></li>
+        </ul>
+        <div class="footer-socials">
+          <a href="#"><i class="fab fa-facebook-f"></i></a>
+          <a href="#"><i class="fab fa-twitter"></i></a>
+          <a href="#"><i class="fab fa-instagram"></i></a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2025 Tous droits réservés. Conçu par CodeStorm😎</p>
+    </div>
+  </footer>
+
+<style>
+    .prediction-container {
+        padding: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .section-title {
+        color: #b22222;
+        font-size: 2em;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .prediction-card {
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .card-title {
+        color: #b22222;
+        font-size: 1.5em;
+        font-weight: bold;
+        margin-bottom: 15px;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 5px;
+    }
+
+    .highlight {
+        color: #b22222;
+        font-weight: bold;
+    }
+
+    .prediction-form {
+        display: grid;
+        gap: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        color: #555;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1em;
+    }
+
+    .checkbox-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .checkbox-group label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .btn-primary {
+        background-color: #b22222;
+        border-color: #b22222;
+        padding: 10px 20px;
+        color: #fff;
+        font-weight: bold;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .btn-primary:hover {
+        background-color: #8b0000;
+        border-color: #8b0000;
+    }
+
+    .prediction-result {
+        margin-top: 20px;
+    }
+
+    .result {
+        font-size: 1.2em;
+        padding: 10px;
+        border-radius: 4px;
+    }
+
+    .result.éligible {
+        background-color: #e6ffe6;
+        color: #28a745;
+    }
+
+    .result.non_éligible {
+        background-color: #ffe6e6;
+        color: #dc3545;
+    }
+
+    @media (max-width: 768px) {
+        .prediction-container {
+            padding: 10px;
+        }
+
+        .section-title {
+            font-size: 1.5em;
+        }
+
+        .card-title {
+            font-size: 1.2em;
+        }
+
+        .form-control, .btn-primary {
+            font-size: 0.9em;
+        }
+    }
+    .site-footer {
+    background: linear-gradient(to right, #b22222, #d9534f);
+    color: white;
+    padding: 30px 15px 10px;
+    font-size: 0.95rem;
+    position: relative;
+    z-index: 10;
+    margin-top: 40px;
+}
+    .footer-container {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
+    max-width: 1200px;
+    margin: auto;
+}
+
+.footer-left h5 {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+}
+
+.footer-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 10px;
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.footer-links a {
+    color: #fff;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.footer-links a:hover {
+    color: #ffd2d2;
+}
+
+.footer-socials a {
+    color: #fff;
+    margin-left: 10px;
+    font-size: 1.2rem;
+    transition: transform 0.3s ease;
+}
+
+.footer-socials a:hover {
+    transform: scale(1.2);
+    color: #ffeaea;
+}
+
+.footer-bottom {
+    text-align: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    padding-top: 10px;
+    margin-top: 20px;
+    font-size: 0.85rem;
+}
+</style>
+{% endblock %}
